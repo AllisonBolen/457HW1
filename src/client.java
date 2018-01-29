@@ -8,20 +8,44 @@ import java.util.Scanner;
 public class client {
     public static void main (String args[]){
         try{
+
+            //create a scanner for user input
             Scanner scan = new Scanner(System.in);
-            String addr = ipAddress(scan);
-            int port = Integer.parseInt(portSelection(scan));
+            //get the server address
+//          String addr = ipAddress(scan);
+            String addr = "127.0.0.1";
+            //get the port to use
+//             int port = Integer.parseInt(portSelection(scan));
+            int port = 9999;
+            //create a datagram channel to transfer data over
             DatagramChannel sc = DatagramChannel.open();
+            //create a console to utilize
             Console cons = System.console();
-            String m = cons.readLine("enter your message: ");
+            //store the filename the user requests and save it as m
+            String m = getFileName(cons);
+            //create a buffer to store the byte data from the filename
             ByteBuffer buff = ByteBuffer.wrap(m.getBytes());
+            //send the buffer over the socket
             sc.send(buff, new InetSocketAddress(addr,port));
 
-            //my code is here get info back from server
-            ByteBuffer buffer = ByteBuffer.wrap(m.getBytes());
+
+
+            //prepare to receive data from the server by allocating a buffer
+            ByteBuffer buffer = ByteBuffer.allocate(1028);
+            //receive data from server and store it in buffer
             sc.receive(buffer);
-            String message = new String(buffer.array()); // convert byte buffer into a string just a new way to do it old can still work old way is better tho// only good for fresh buffers ^
-            System.out.println(message);
+            //flip the buffer to restrict the buffer to the content
+            buffer.flip();
+            //create a byte array to store the content from the byte buffer
+            byte[] msgBuffer = new byte[buffer.remaining()];
+            //get the data from the buffer to msgBuffer
+            buffer.get(msgBuffer);
+            //ourput the data from msgBuffer
+            String msgg = new String(msgBuffer);
+            //byte[] bytesReceived = new byte[buffer.remaining()];
+            //buffer.get(bytesReceived);
+            //String message = new String(bytesReceived);
+            System.out.println(msgg);
 
             sc.close();
         }catch(IOException e){
