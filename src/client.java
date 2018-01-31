@@ -64,7 +64,7 @@ public class client {
                 //ackBuffer.rewind();
                 sc.send(ackBuffer, serverAddr);
 
-                FileOutputStream fos = new FileOutputStream("test1.txt");
+                FileOutputStream fos = new FileOutputStream("dl"+m);
                 int counterMin = 0;
                 int counterMax = 0;//4
                 int streak = 0;
