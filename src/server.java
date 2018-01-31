@@ -31,8 +31,8 @@ public class server {
             // scanner for reading in data
             Scanner scan = new Scanner(System.in);
             // port to use provided by server
-            //int port = Integer.parseInt(getPort(scan));
-            int port = 9999;
+            int port = Integer.parseInt(getPort(scan));
+            // int port = 9999;
             // opens a channnel to communicate through
             DatagramChannel c = DatagramChannel.open();
             // think of as a set of channels - along with an associated operation, int eh set for reading or writing? meant help check multiple channels at a time.
@@ -68,6 +68,20 @@ public class server {
                         buffer.flip();
                         // the bytes of the message
                         char index = buffer.getChar();
+                        if(index == 'B'){
+                            //clientSlideAck.flip();
+                            System.out.println("The client Buff is @: "+ buffer.position() + " limit is @: " + buffer.limit());
+                            System.out.println("THIS IS B");
+                            int clientGotMin = buffer.getInt();
+                            int clientGotMax = buffer.getInt();
+                            System.out.println(clientGotMin);
+                            System.out.println(clientGotMax);
+                            counterMinGlobal = clientGotMin;
+                            counterMaxGlobal = clientGotMax;
+                            packetNumGlobal = counterMinGlobal + 1;
+                            System.out.println(packetNumGlobal);
+                            sendFile(myc, clientaddr);
+                        }
                         byte[] msgBuffer = new byte[buffer.remaining()];
                         // get the data from the buffer to the msgbuffer
                         buffer.get(msgBuffer);
@@ -103,23 +117,20 @@ public class server {
                                 myc.send(noFile, clientaddr);
                             }
                         }
+                        //ack
                         if(index == 'A'){
                             System.out.println("Acknowledged!!!!!!!!");
                             if(packetAmountGlobal > 0){
                                 sendFile(myc, clientaddr);
                             }
                         }
-                        if(index == 'B'){
-                            ByteBuffer clientSlideAck = ByteBuffer.allocate(1028);
-                            myc.receive(clientSlideAck);
-                            clientSlideAck.flip();
-                            int clientGot = clientSlideAck.getInt();
-                            counterMinGlobal = clientGot;
-                            sendFile(myc, clientaddr);
-                        }
+                        //client streak
+
                         buffer.rewind();
                         //reset values
                         minValGlobal = 0;
+                        counterMinGlobal = 0;
+                        counterMaxGlobal = 0;
                         startByteGlobal = 0;
                         packetNumGlobal = 1;
 
@@ -166,16 +177,20 @@ public class server {
     }
 
     public static void sendFile(DatagramChannel myC, SocketAddress cAddr){
-// 			if (counterMinGlobal == counterMaxGlobal){
-// 				for(int i = 5; i > 0; i--){
-// 				if (counterMaxGlobal + i < packetAmountGlobal){
-// 					counterMaxGlobal = counterMaxGlobal + i;
-// 					break;
-// 				}
-// 			}
-// 			}
+        System.out.println("Inside sendFile: " + counterMinGlobal + " Max: " + counterMaxGlobal);
+        if (counterMinGlobal == counterMaxGlobal){
+            System.out.println("Their The SAME!");
+            for(int i = 5; i > 0; i--){
+                System.out.println("For LOOP is AT: "+i);
+                if (counterMaxGlobal + i <= packetAmountGlobal){
+                    counterMaxGlobal = counterMaxGlobal + i;
+                    System.out.println("counterMaxGlobal is AT: "+ counterMaxGlobal);
+                    break;
+                }
+            }
+        }
 
-        while (startByteGlobal < myFileGlobal.length() ){
+        while (startByteGlobal < myFileGlobal.length() && counterMinGlobal < counterMaxGlobal){
             if(startByteGlobal + 1024 < myFileGlobal.length()){
                 System.out.println("inside if" + startByteGlobal + " " + myFileGlobal.length());
                 try {
@@ -192,7 +207,7 @@ public class server {
                     myC.send(buf, cAddr);
                     packetNumGlobal++;
                     startByteGlobal += 1024;
-
+                    counterMinGlobal++;
                 } catch (Exception e) {
                     // TODO: handle exception
                     System.out.println("Exception: " + e);
@@ -212,7 +227,7 @@ public class server {
                     myC.send(buf, cAddr);
                     packetNumGlobal++;
                     startByteGlobal += (int) myFileGlobal.length() - startByteGlobal;
-
+                    counterMinGlobal++;
                 } catch (Exception e) {
                     System.out.println("Exception: " + e);
                 }
