@@ -2,7 +2,6 @@
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -12,19 +11,21 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Scanner;
-import java.nio.file.Files;
 import java.util.ArrayList;
 
 //It can send an infinite amount of packets! and DNE
 public class server {
 
     public static ArrayList<Integer> returnedArray = new ArrayList<Integer>();
-    public static int minVal = 0;
-    public static int startByte = 0;
-    public static String fileName;
-    public static File myFile;
-    public static int packetNum = 1;
-
+    public static int minValGlobal = 0;
+    public static int startByteGlobal = 0;
+    public static String fileNameGlobal;
+    public static File myFileGlobal;
+    public static int packetNumGlobal = 1;
+    public static int packetAmountGlobal;
+    public static FileInputStream fisGlobal;
+    public static int counterMinGlobal = 0;
+    public static int counterMaxGlobal = 0;
     public static void main(String args[]) {
         try {
             // scanner for reading in data
@@ -46,6 +47,7 @@ public class server {
             while (true) {
                 //check if there is data to read
                 int n = s.select(5000);
+
                 if (n == 0) {
                     // didnt get any packets
                     System.out.println("Got a timeout");
@@ -65,58 +67,62 @@ public class server {
                         //flip the buffer to restrict the buffer to the content
                         buffer.flip();
                         // the bytes of the message
+                        char index = buffer.getChar();
                         byte[] msgBuffer = new byte[buffer.remaining()];
                         // get the data from the buffer to the msgbuffer
                         buffer.get(msgBuffer);
                         // convert byte buffer into a string just a new way to do it old can still work old way is better tho// only good for fresh buffers ^
                         String message = new String(msgBuffer);
-                        myFile = new File(message);
-                        // print the message to the console
+                        // print the message to the console        vcbvbc
                         System.out.println("Filename: " + message);
                         // fresh buffer to return info to the client with
-
-
-                        if(fileExists(message)){
-                            int packetAmount = fileSize(message);
-                            System.out.println("Packets needed to be sent: " + packetAmount);
-                            if(packetAmount > 0){
+                        if(index == 'F'){
+                            // file exists
+                            if(fileExists(message)){
+                                myFileGlobal = new File(message);
+                                try {
+                                    fisGlobal = new FileInputStream(myFileGlobal);
+                                } catch (Exception e) {
+                                    System.out.println("Exception: " + e);
+                                }
+                                ByteBuffer sendPacketNumber = ByteBuffer.allocate(1028);
+                                packetAmountGlobal = fileSize(myFileGlobal.length());
+                                sendPacketNumber.putInt(packetAmountGlobal);
+                                sendPacketNumber.flip();
+                                System.out.println("Packets needed to be sent: " + packetAmountGlobal);
+                                myc.send(sendPacketNumber, clientaddr);
+                            }
+                            // file doesnt exist
+                            else{
+                                ByteBuffer noFile = ByteBuffer.allocate(1028);
+                                String nope = "File non existant";
+                                noFile.putInt(-6);
+                                byte[] noData = nope.getBytes();
+                                noFile.put(noData);
+                                noFile.flip();
+                                myc.send(noFile, clientaddr);
+                            }
+                        }
+                        if(index == 'A'){
+                            System.out.println("Acknowledged!!!!!!!!");
+                            if(packetAmountGlobal > 0){
                                 sendFile(myc, clientaddr);
                             }
                         }
-                        else{
-                            ByteBuffer noPacket = ByteBuffer.allocate(1024);
-                            noPacket.putInt(5);
-                            byte[] noPacketByte = new byte[noPacket.remaining()];
-                            String noPacketString = "Does Not Exist";
-                            noPacketByte = noPacketString.getBytes();
-                            noPacket.put(noPacketByte);
-                            noPacket.flip();
-                            myc.send(noPacket, clientaddr);
+                        if(index == 'B'){
+                            ByteBuffer clientSlideAck = ByteBuffer.allocate(1028);
+                            myc.receive(clientSlideAck);
+                            clientSlideAck.flip();
+                            int clientGot = clientSlideAck.getInt();
+                            counterMinGlobal = clientGot;
+                            sendFile(myc, clientaddr);
                         }
-                        // from the file present we send that byte array to teh buffer
-
-                        //buf2.put(filePresent(message));
-                        //flip the buffer to restrict the buffer to the content, flip to read.
-
-                        // get the test data from the buffer buff2
-
-                        // get the data from the buffer to the msgbuffer
-
-                        // teh data in test data
-
-                        // changes the shrunken space to the allocated space
-
                         buffer.rewind();
-                        //sed it to the client
-
-                        //myc.send(buffer, clientaddr);
-                        // me here ^
-                        // remove the iterator
-
                         //reset values
-                        minVal = 0;
-                        startByte = 0;
-                        packetNum = 1;
+                        minValGlobal = 0;
+                        startByteGlobal = 0;
+                        packetNumGlobal = 1;
+
                         i.remove();
                     }
                 }
@@ -125,26 +131,6 @@ public class server {
             System.out.println("Got an error: " + e);
         }
     }
-
-//	public static void sendOnePacket(String fileName, DatagramChannel firstMyc, SocketAddress firstAddr){
-//
-//		ByteBuffer firstBuffer = ByteBuffer.allocate(1028);
-//		firstBuffer.putInt(1).put(filePresent(fileName));
-//		firstBuffer.flip();
-//		byte[] testData = new byte[firstBuffer.remaining()];
-//		firstBuffer.get(testData);
-//		String testData2 = new String(testData);
-//		// print it to console
-//    System.out.println(testData2);
-//		firstBuffer.rewind();
-//		//myc.send(buf2, clientaddr);
-//		try {
-//			firstMyc.send(firstBuffer, firstAddr);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
 
     public static String getPort(Scanner scan) {
         System.out.println("Please enter a port to connect to");
@@ -160,13 +146,10 @@ public class server {
         return false;
     }
 
-    public static int fileSize(String fileName){
-        myFile = new File(fileName);
-
-        if (myFile.exists() && !myFile.isDirectory()) {
-            int size = (int)myFile.length();
-            System.out.println("Size of file: " + size);
-            double count = size/1024.0;
+    public static int fileSize(long fileSize){
+        if (myFileGlobal.exists() && !myFileGlobal.isDirectory()) {
+            System.out.println("Size of file: " + fileSize);
+            double count = fileSize/1024.0;
             int ceiledValue = (int) Math.ceil(count);
             return ceiledValue;
         }
@@ -176,40 +159,40 @@ public class server {
     }
 
     public static int checkMin(){
-        while(returnedArray.contains(minVal)){
-            minVal++;
+        while(returnedArray.contains(minValGlobal)){
+            minValGlobal++;
         }
-        return minVal;
+        return minValGlobal;
     }
 
     public static void sendFile(DatagramChannel myC, SocketAddress cAddr){
-        while (startByte < myFile.length()){
-            //System.out.println("inside while: " + startByte + " " + myFile.length());
-            if(startByte + 1024 < myFile.length()){
-                System.out.println("inside if" + startByte + " " + myFile.length());
+// 			if (counterMinGlobal == counterMaxGlobal){
+// 				for(int i = 5; i > 0; i--){
+// 				if (counterMaxGlobal + i < packetAmountGlobal){
+// 					counterMaxGlobal = counterMaxGlobal + i;
+// 					break;
+// 				}
+// 			}
+// 			}
+
+        while (startByteGlobal < myFileGlobal.length() ){
+            if(startByteGlobal + 1024 < myFileGlobal.length()){
+                System.out.println("inside if" + startByteGlobal + " " + myFileGlobal.length());
                 try {
-                    //System.out.println("Inside try");
                     ByteBuffer buf = ByteBuffer.allocate(1028);
-                    FileInputStream fis = new FileInputStream(myFile);
-                    //System.out.println("FISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
-                    //String s = new String(bArray);
-                    //System.out.println(s);
-                    //System.out.println("REAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD");
                     System.out.println("The index is at: " + buf.position() + "The limit is at: " + buf.limit());
-                    buf.putInt(packetNum);
+                    buf.putInt(packetNumGlobal);
                     System.out.println("The index is at: " + buf.position() + "The limit is at: " + buf.limit());
                     byte[] bArray = new  byte[buf.remaining()];
-                    //fis.read(bArray, startByte, startByte + 1024);
-                    fis.skip(startByte);
-                    fis.read(bArray, 0, 1024);
+                    fisGlobal.read(bArray, 0, 1024);
                     buf.put(bArray);
-                    fis.close();
                     System.out.println("PUTTTTTUTUTUTUTUTUTUT");
                     buf.flip();
                     System.out.println("if After Flip");
                     myC.send(buf, cAddr);
-                    packetNum++;
-                    startByte += 1024;
+                    packetNumGlobal++;
+                    startByteGlobal += 1024;
+
                 } catch (Exception e) {
                     // TODO: handle exception
                     System.out.println("Exception: " + e);
@@ -217,40 +200,23 @@ public class server {
             }
             else{
                 try {
-                    //System.out.println("The index is at: " + buf.position() + "The limit is at: " + buf.limit());
                     ByteBuffer buf = ByteBuffer.allocate(1028);
-                    FileInputStream fis = new FileInputStream(myFile);
-                    buf.putInt(packetNum);
+                    buf.putInt(packetNumGlobal);
                     byte[] bArray = new byte[buf.remaining()];//1024
-                    //System.out.println("file Length:"  + myFile.length());
-                    //System.out.println("array: " + bArray.length);
-                    //System.out.println("startByte: " + startByte);
-                    //System.out.println("things: "+ (bArray.length-startByte) + ", length: " + myFile.length());
-                    fis.skip(startByte);
-                    fis.read(bArray);
-                    //fis.read(bArray, startByte, (int) bArray.length;// 1024 - 1620
+                    fisGlobal.read(bArray, 0, 1024);
                     System.out.println("solved");
                     buf.put(bArray);
-                    fis.close();
+                    fisGlobal.close();
                     buf.flip();
                     System.out.println("else after Flip");
                     myC.send(buf, cAddr);
-                    packetNum++;
-                    startByte += (int)myFile.length() - startByte;
+                    packetNumGlobal++;
+                    startByteGlobal += (int) myFileGlobal.length() - startByteGlobal;
+
                 } catch (Exception e) {
                     System.out.println("Exception: " + e);
                 }
             }
         }
     }
-
-
-
-// 	public void slidingWindow(){
-// 		for(minVal, minVal + 4, minVal++){
-//			if(!returnedArray.contain(packetNum))
-// 				sendFile(myC, clientAddr);
-// 		}
-//
-// 	}
 }
