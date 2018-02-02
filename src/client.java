@@ -6,124 +6,157 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.Iterator;
 import java.util.Scanner;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.Pattern;
+
 // ArrayList.add(int index, E elemen)
 // It can currently read up to 5 packets.
 public class client {
     // we need to store the data how an array of byte arrays of the packets we get on server side
     //
-    public static void main (String args[]){
-        try{
+    public static void main(String args[]) {
+        try {
+
             //create a scanner for user input
             Scanner scan = new Scanner(System.in);
             //get the server address
-            String addr = ipAddress(scan);
-            //String addr = "127.0.0.1";
+            Selector s = Selector.open();
+            // String addr = ipAddress(scan);
+
+            String addr = "127.0.0.1";
             //get the port to use
-            int port = Integer.parseInt(portSelection(scan));
-            //int port = 9999;
-            //create a datagram channel to transfer data over
+            //int port = Integer.parseInt(portSelection(scan));
+
+            int port = 9999;
+
             DatagramChannel sc = DatagramChannel.open();
-            //create a console to utilize
+            //Selector s = Selector.open();
+            // is there data available at this instance? if then return if not go past the line // block forever or not but the selector lets us block for a certain amount of time
+            sc.configureBlocking(false);
+            // ??????
+            sc.register(s, SelectionKey.OP_READ);
             Console cons = System.console();
             //store the filename the user requests and save it as m
             String m = getFileName(cons);
-            //create a buffer to store the byte data from the filename
-            ByteBuffer buff = ByteBuffer.allocate(1026);
-            buff.putChar('F');
-            byte[] fileByte = m.getBytes();
-            buff.put(fileByte);
-            buff.flip();
+            int wantedPacket = 0;
+            int packetNumber = 0;
             //set the socket address to the server
             InetSocketAddress serverAddr = new InetSocketAddress(addr, port);
-            //send the buffer over the socket
-            sc.send(buff, serverAddr);
-            // receive packets form the buffer
-            // if the client gets a packet that contains the number of packets it will receive for the file transfer do this v
+            //This is the while for Sending the File name w/ timeout resend
+            while (true) {
+                ByteBuffer buff = ByteBuffer.allocate(1026);
+                buff.putChar('F');
+                byte[] fileByte = m.getBytes();
+                buff.put(fileByte);
+                buff.flip();
+                //send the buffer over the socket
+                sc.send(buff, serverAddr);
+                int n = s.select(5000);
+                if (n == 0) {
+                    // didnt get any packets
+                    System.out.println("Got a timeout");
+                } else { //else we got a reponse from the server.
+                    Iterator i = s.selectedKeys().iterator();
+                    while (i.hasNext()) {
+                        SelectionKey k = (SelectionKey) i.next();
+                        i.remove();
+                    }
+                    //The packetnumber the server sends back.
+                    ByteBuffer getA = ByteBuffer.allocate(1028);
+                    sc.receive(getA);
+                    packetNumber = getA.getInt();
+                    if (packetNumber == -6) {
+                        System.out.println("The file does not exist.");
+                        sc.close();
+                        return;//maybe system.exit.
+                    }
+                    //File exists, break out of this loop to go to next loop
+                    //to send acknowledgemnt.
+                    else if (packetNumber > 0) {
+                        break;
 
-            ByteBuffer packetBuffer = ByteBuffer.allocate(1028);
-            sc.receive(packetBuffer);
-            packetBuffer.flip();
-            int packetNumber = packetBuffer.getInt();
-            //System.out.println(packetNumber);
-
-            if(packetNumber == -6){
-                System.out.println("The file does not exist.");
-                sc.close();
+                    }
+                }
             }
-            else if(packetNumber > 0){
+            //This is for sending the acknowledgment that client received the packet number w/ resend
+            while (true) {
                 ByteBuffer ackBuffer = ByteBuffer.allocate(1028);
+                //Need to implement for server: if server gets A again, resend all data.
                 ackBuffer.putChar('A');
                 ackBuffer.flip();
-                //int ackTest = ackBuffer.getInt();
-                //System.out.println("Acknowledgment test: " + ackTest);
-                //ackBuffer.rewind();
                 sc.send(ackBuffer, serverAddr);
-
-                FileOutputStream fos = new FileOutputStream("dl"+m);
-                int counterMin = 0;
-                int counterMax = 0;//4
-                int streak = 0;
-                int serverMax = 0;
-                while(streak != packetNumber){
-
-                    if (counterMin == counterMax){
-                        for(int i = 5; i > 0; i--){
-                            //System.out.println(i);
-                            if (counterMax + i <= packetNumber){
-                                counterMax = counterMax + i;
-                                break;
-                            }
-                        }
-                    }
-
-                    for(int i = counterMin; i < counterMax; i++){
-                        //System.out.println("For Loop Packet NUMBER" + i);
-                        ByteBuffer secondBuffer = ByteBuffer.allocate(1028);
-                        sc.receive(secondBuffer);
-                        // System.out.println("????????");
-                        secondBuffer.flip();
-                        int b = secondBuffer.getInt() -1;
-                        if (b == i){
-                            byte[] secondByte = new byte[secondBuffer.remaining()];
-                            secondBuffer.get(secondByte);
-                            streak++;
-                            fos.write(secondByte);
-                            String theSecond = new String(secondByte);
-                            //System.out.println(theSecond + "?");
-                        }
-
-
-
-                        serverMax++;
-                    }
-                    //System.out.println("The Streak is @: " + streak);
-                    ByteBuffer clientAtBuffer = ByteBuffer.allocate(1026);
-                    clientAtBuffer.putChar('B');
-                    clientAtBuffer.putInt(streak);
-                    clientAtBuffer.putInt(serverMax);
-                    clientAtBuffer.flip();
-                    if(streak == packetNumber){
-                        sc.close();
-                        break;
-                    }
-                    counterMin = streak;
-                    //stopper += streak;
-                    sc.send(clientAtBuffer, serverAddr);
+                int n = s.select(5000);
+                if (n == 0) {
+                    // didnt get any packets
+                    System.out.println("Got a timeout");
+                } else { //else we got data from server.
+                    break;
                 }
-                fos.close();
+            }
+            //Set blocking true so that we hang at receives. and send back acknowledgements
+            sc.configureBlocking(true);
+            FileOutputStream fos = new FileOutputStream("dl-" + m);
+            while (wantedPacket != packetNumber) {
+                //our recive buffer created every loop because unless its the last packet we keep going
+                ByteBuffer receivedPackets = ByteBuffer.allocate(1028);
+                sc.receive(receivedPackets);
+                receivedPackets.flip();
+                //the packet number fo rhte packet jsut recived form teh server
+                int packetNum = receivedPackets.getInt();
+                // first if for case 1: the packet we got from teh server is teh packet we want form teh server ie: hte lowest in our window
+                if (packetNum == wantedPacket) {
+                    byte[] data = new byte[receivedPackets.remaining()];
+                    receivedPackets.get(data);
+                    // data has our bytes
+                    // write to file
+                    wantedPacket++;
+                    fos.write(data);
+                    // send ack for the packet we just got and wrote to file
+                    ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
+                    sendingPacket.putChar('B');
+                    sendingPacket.putInt(packetNum);
+                    sendingPacket.flip();
+                    sc.send(sendingPacket, serverAddr);
+                    // check our window
+                    checkWindow(wantedPacket);
+                }
+                if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) {
+                    // if the packet is not in the window we are looking for
+                    // send the packet to the server taht we got this already if its less than the wanted or more then the window +5
+                    ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
+                    sendingPacket.putChar('B');
+                    sendingPacket.putInt(packetNum);
+                    sendingPacket.flip();
+                    sc.send(sendingPacket, serverAddr);
+                }
+                if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
+                    //if the packet is in our window but not what we need right now
+                    save data to the array in the proper spot
+                    // send out the ack for the array
+                    ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
+                    sendingPacket.putChar('B');
+                    sendingPacket.putInt(packetNum);
+                    sendingPacket.flip();
+                    sc.send(sendingPacket, serverAddr);
+                }
+                if (packetNum == packetNumber) {
+                    save the data
+                    //send an ack to the server
+                    ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
+                    sendingPacket.putChar('B');
+                    sendingPacket.putInt(packetNum);
+                    sendingPacket.flip();
+                    sc.send(sendingPacket, serverAddr);
+                    sc.close();
+                    System.exit(0);
+                }
 
             }
-            else{
-                System.out.println("Invalid Packet Number Response");
-            }
 
-            sc.close();
-        }catch(IOException e){
+
+        } catch (IOException e) {
             System.out.println("error " + e);
         }
     }
@@ -131,28 +164,26 @@ public class client {
     public static String portSelection(Scanner scan) {
         System.out.println("Enter a port to connect to:");
         String info = scan.next();
-
-//        Pattern port = Pattern.compile("([01]?\\\\d\\\\d?|2[0-4]\\\\d|25[0-5])$");
-//        Matcher match = port.matcher(info);
-//        while(!match.matches()) {
-//            System.out.println("Enter a valid port please: ");
-//            info = scan.next();
-//            match = port.matcher(info);
-//        }
         return info;
     }
 
     public static String ipAddress(Scanner scan) {
         System.out.println("Enter an IP address to connect to:");
         String info = scan.next();
-//        Pattern ip = Pattern.compile("([01]?\\\\d\\\\d?|2[0-4]\\\\d|25[0-5])$");
-//        Matcher match = ip.matcher(info);
         return info;
     }
 
     public static String getFileName(Console cons) {
         String info = cons.readLine("Enter a file name: ");
         return info;
+    }
+
+    public static int checkWindow(int wantedPacket) {
+        put stuff here
+    }
+
+    public static void shiftArray(Params) {
+        put stuff here
     }
 }
 
