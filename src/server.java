@@ -38,9 +38,9 @@ public class server {
             // scanner for reading in data
             Scanner scan = new Scanner(System.in);
             // port to use provided by server
-            //  int port = Integer.parseInt(getPort(scan));
-            //  validPort(port);
-             int port = 9999;
+              int port = Integer.parseInt(getPort(scan));
+              validPort(port);
+             //int port = 9999;
             // opens a channnel to communicate through
             DatagramChannel c = DatagramChannel.open();
             // think of as a set of channels - along with an associated operation, int eh set for reading or writing? meant help check multiple channels at a time.

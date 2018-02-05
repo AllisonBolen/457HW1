@@ -29,12 +29,12 @@ public class client {
             Scanner scan = new Scanner(System.in);
             //get the server address
             Selector s = Selector.open();
-            // String addr = ipAddress(scan);
-            String addr = "127.0.0.1";
+             String addr = ipAddress(scan);
+            //String addr = "127.0.0.1";
             //get the port to use
-            // int port = Integer.parseInt(portSelection(scan));
-            // validPort(port);
-            int port = 9999;
+             int port = Integer.parseInt(portSelection(scan));
+             validPort(port);
+            //int port = 9999;
             DatagramChannel sc = DatagramChannel.open();
             //Selector s = Selector.open();
             // is there data available at this instance? if then return if not go past the line // block forever or not but the selector lets us block for a certain amount of time
