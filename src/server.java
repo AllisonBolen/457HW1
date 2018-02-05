@@ -40,7 +40,7 @@ public class server {
             // port to use provided by server
             //  int port = Integer.parseInt(getPort(scan));
             //  validPort(port);
-            // int port = 9999;
+             int port = 9999;
             // opens a channnel to communicate through
             DatagramChannel c = DatagramChannel.open();
             // think of as a set of channels - along with an associated operation, int eh set for reading or writing? meant help check multiple channels at a time.
@@ -211,7 +211,7 @@ public class server {
             }
             System.out.println("Sent Packet:" + packetNumGlobal);
             packetNumGlobal++;
-            startByteGlobal += myFileGlobal.length();
+            startByteGlobal += (int) myFileGlobal.length();  /// final fix ??????
         }
         //check in there are not at least 5 packets to send
         else if (packetAmountGlobal < 5) { // problem if we arent even using one whole packet
@@ -319,7 +319,7 @@ public class server {
         }
         //if the packet now is ALREADY ack.
         System.out.println(minValGlobal);
-        if (acknowledgedPackets.contains(minValGlobal)) { // is the min value already ackd ie in list
+        if (acknowledgedPackets.contains(minValGlobal) && packetNumGlobal <= packetAmountGlobal) { // is the min value already ackd ie in list
             byteValues[0] = null;// if so set teh lowest window bytes to null
             for (int i = 0; i < 4; i++) { // this will shift our values, sets the current value to the next value
                 byteValues[i] = byteValues[i + 1];
