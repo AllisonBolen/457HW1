@@ -38,8 +38,11 @@ public class server {
             // scanner for reading in data
             Scanner scan = new Scanner(System.in);
             // port to use provided by server
+              String addr = ipAddress(scan);
+
               int port = Integer.parseInt(getPort(scan));
               validPort(port);
+
              //int port = 9999;
             // opens a channnel to communicate through
             DatagramChannel c = DatagramChannel.open();
@@ -50,7 +53,7 @@ public class server {
             // ??????
             c.register(s, SelectionKey.OP_READ);
             // lsiten on a port
-            c.bind(new InetSocketAddress(port));
+            c.bind(new InetSocketAddress(addr, port));
             // get the info as long as there is a thing open to read from
             while (true) {
                 //check if there is data to read
@@ -372,5 +375,11 @@ public class server {
             System.out.println("'" + port + "' is an invalid port address.");
             System.exit(0);
         }
+    }
+
+    public static String ipAddress(Scanner scan) {
+        System.out.println("Enter an IP address to connect to:");
+        String info = scan.next();
+        return info;
     }
 }
