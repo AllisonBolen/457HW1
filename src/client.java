@@ -14,37 +14,33 @@ import java.util.Scanner;
 
 // ArrayList.add(int index, E elemen)
 
-
 // It can currently read up to 5 packets.
 public class client {
     // we need to store the data how an array of byte arrays of the packets we get on server side
     //
     public static byte[][] byteValues = new byte[5][];
-    public static int[] numTracker = new int[5];
+    public static int[] numTracker = {0,1,2,3,4};
     //might nto need
     public static ArrayList<Integer> receivedPackets = new ArrayList<Integer>();
     public static int packetNumberTotal;
     public static void main(String args[]) {
         try {
-
             //create a scanner for user input
             Scanner scan = new Scanner(System.in);
             //get the server address
             Selector s = Selector.open();
             // String addr = ipAddress(scan);
-
             String addr = "127.0.0.1";
             //get the port to use
-            //int port = Integer.parseInt(portSelection(scan));
-
+            // int port = Integer.parseInt(portSelection(scan));
+            // validPort(port);
             int port = 9999;
-
             DatagramChannel sc = DatagramChannel.open();
             //Selector s = Selector.open();
             // is there data available at this instance? if then return if not go past the line // block forever or not but the selector lets us block for a certain amount of time
             sc.configureBlocking(false);
             // ??????
-            sc.register(s, SelectionKey.OP_READ);
+            SelectionKey saved = sc.register(s, SelectionKey.OP_READ);
             Console cons = System.console();
             //store the filename the user requests and save it as m
             String m = getFileName(cons);
@@ -64,17 +60,26 @@ public class client {
                 int n = s.select(5000);
                 if (n == 0) {
                     // didnt get any packets
-                    System.out.println("Got a timeout");
+                    System.out.println("Got a timeout, resending file name.");
+                    sc.send(buff, serverAddr);
                 } else { //else we got a reponse from the server.
+                    System.out.println("Got something from the server");
+
                     Iterator i = s.selectedKeys().iterator();
                     while (i.hasNext()) {
+                        System.out.println("does i have a next");
+
                         SelectionKey k = (SelectionKey) i.next();
+
                         i.remove();
                     }
+                    System.out.println("After interator");
                     //The packetnumber the server sends back.
                     ByteBuffer getA = ByteBuffer.allocate(1028);
                     sc.receive(getA);
+                    getA.flip();
                     packetNumberTotal = getA.getInt();
+                    //System.out.println("The packet number after the i.remove iterator" + packetNumberTotal);
                     if (packetNumberTotal == -6) {
                         System.out.println("The file does not exist.");
                         sc.close();
@@ -83,8 +88,8 @@ public class client {
                     //File exists, break out of this loop to go to next loop
                     //to send acknowledgemnt.
                     else if (packetNumberTotal > 0) {
+                        System.out.println(packetNumberTotal);
                         break;
-
                     }
                 }
             }
@@ -104,6 +109,7 @@ public class client {
                 }
             }
             //Set blocking true so that we hang at receives. and send back acknowledgements
+            saved.cancel();
             sc.configureBlocking(true);
             FileOutputStream fos = new FileOutputStream("dl-" + m);
             // reciveing data
@@ -114,6 +120,7 @@ public class client {
                 receivedPackets.flip();
                 //the packet number fo rhte packet jsut recived form teh server
                 int packetNum = receivedPackets.getInt();
+                System.out.println("The packet number of this packet is: " + packetNum);
                 // first if for case 1: the packet we got from teh server is teh packet we want form teh server ie: hte lowest in our window
                 if (packetNum == wantedPacket) {
                     byte[] data = new byte[receivedPackets.remaining()];
@@ -123,21 +130,16 @@ public class client {
                     wantedPacket++;
                     fos.write(data);
                     // send ack for the packet we just got and wrote to file
-//                     ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
-//                     sendingPacket.putChar('B');
-//                     sendingPacket.putInt(packetNum);
-//                     sendingPacket.flip();
-//                     sc.send(sendingPacket, serverAddr);
                     sendAcknowledgment(packetNum,sc, serverAddr);
                     // check our window
                     wantedPacket = checkWindow(wantedPacket, fos);
                 }
-                if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) { // packet duplicates
+                else if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) { // packet duplicates
                     // if the packet is not in the window we are looking for
                     // send the packet to the server that we got this already if its less than the wanted or more then the window +5
                     sendAcknowledgment(packetNum,sc, serverAddr);
                 }
-                if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
+                else if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
                     //if the packet is in our window but not what we need right now
                     int loc = indexSpot(packetNum);
                     if (loc != -1) { // packet we jsut got is in our window
@@ -148,10 +150,12 @@ public class client {
                             sendAcknowledgment(packetNum,sc, serverAddr); // send ack to server
                         }
                     }
-                    sendAcknowledgment(packetNum,sc, serverAddr); // send ack to server that we got a duplicate
+                    else{
+                        sendAcknowledgment(packetNum,sc, serverAddr); // send ack to server that we got a duplicate
+                    }
                 }
 
-                if (packetNum == packetNumberTotal) {
+                else if (packetNum == packetNumberTotal) {
                     byte[] data = new byte[receivedPackets.remaining()]; // write the data to teh proper location in the array
                     receivedPackets.get(data);
                     fos.write(data);
@@ -192,6 +196,9 @@ public class client {
         if (loc == -1) {
             return wantedPacket;
         }
+        if(byteValues[loc] == null){
+            return wantedPacket;
+        }
         // the packet were looking for is in the window
         else {
             byte[] data = byteValues[loc];
@@ -220,7 +227,7 @@ public class client {
 
     public static void moveDataWindow() {
         byteValues[0] = null;// if so set the lowest window bytes to null
-        for (int i = 0; i < 5; i++) { // this will shift our values, sets the current value to the next value
+        for (int i = 0; i < 4; i++) { // this will shift our values, sets the current value to the next value
             byteValues[i] = byteValues[i + 1];
         }
         byteValues[4] = null;//clears the last array spot
@@ -228,7 +235,7 @@ public class client {
 
     public static void moveNumTracker() {
         numTracker[0] = 0;// if so set the lowest window bytes to null
-        for (int i = 0; i < 5; i++) { // this will shift our values, sets the current value to the next value
+        for (int i = 0; i < 4; i++) { // this will shift our values, sets the current value to the next value
             numTracker[i] = numTracker[i + 1];
         }
         if (numTracker[3] != 0 && numTracker[3] != packetNumberTotal - 1)
@@ -236,6 +243,7 @@ public class client {
     }
 
     public static void sendAcknowledgment(int packetNum, DatagramChannel sc, InetSocketAddress serverAddr) {
+        System.out.println("Ack for packet number: " + packetNum);
         ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
         sendingPacket.putChar('B');
         sendingPacket.putInt(packetNum);
@@ -244,6 +252,13 @@ public class client {
             sc.send(sendingPacket, serverAddr);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void validPort(int port) {
+        if (port < 1 || port > 65535) {
+            System.out.println("'" + port + "' is an invalid port address.");
+            System.exit(0);
         }
     }
 }
