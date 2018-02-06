@@ -146,6 +146,10 @@ public class client {
                     sendAcknowledgment(packetNum, sc, serverAddr);
                 } else if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
                     //if the packet is in our window but not what we need right now
+                    if(packetNum<wantedPacket){
+                        System.out.println("got duplicate" + packetNum);
+
+                    }
                     int loc = indexSpot(packetNum);
                     if (loc != -1) { // packet we jsut got is in our window
                         if (byteValues[loc] == null) { // its not a duplicate
@@ -155,6 +159,7 @@ public class client {
                             sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server
                         }
                     } else {
+                        System.out.println("got duplicate" + packetNum);
                         sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server that we got a duplicate
                     }
                 } else if (packetNum == packetNumberTotal) {
