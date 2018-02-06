@@ -1,8 +1,8 @@
 //package proj1;
 
 // 20% duplication passes
-// loss on client side passes
-// reorder on client side kind of works
+// loss on client side passes at 20%
+// reorder on client side kind of works yeah?
 
 import java.io.Console;
 import java.io.FileOutputStream;

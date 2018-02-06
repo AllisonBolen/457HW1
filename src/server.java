@@ -1,8 +1,8 @@
 //package proj1;
-// Loss is covered at 20% on server passes
+// Loss is covered at 20% on server passes iffy
 // loss and dups at 20% on server passes
-// dups at 20% on server passes
-// reordering fail on server
+// dups at 20% on server passes kind of 
+// reordering fail on server makes us have a loop
 
 import java.io.File;
 import java.io.FileInputStream;
