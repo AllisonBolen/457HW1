@@ -67,13 +67,13 @@ public class client {
 
                     Iterator i = s.selectedKeys().iterator();
                     while (i.hasNext()) {
-                        System.out.println("does i have a next");
+                        //System.out.println("does i have a next");
 
                         SelectionKey k = (SelectionKey) i.next();
 
                         i.remove();
                     }
-                    System.out.println("After interator");
+                    //System.out.println("After interator");
                     //The packetnumber the server sends back.
                     ByteBuffer getA = ByteBuffer.allocate(1028);
                     sc.receive(getA);
@@ -120,7 +120,7 @@ public class client {
                 receivedPackets.flip();
                 //the packet number fo rhte packet jsut recived form teh server
                 int packetNum = receivedPackets.getInt();
-                System.out.println("The packet number of this packet is: " + packetNum);
+                //System.out.println("The packet number of this packet is: " + packetNum);
                 // first if for case 1: the packet we got from teh server is teh packet we want form teh server ie: hte lowest in our window
                 if (packetNum == wantedPacket) {
                     byte[] data = new byte[receivedPackets.remaining()];
@@ -243,7 +243,7 @@ public class client {
     }
 
     public static void sendAcknowledgment(int packetNum, DatagramChannel sc, InetSocketAddress serverAddr) {
-        System.out.println("Ack for packet number: " + packetNum);
+        System.out.println("Sending Ack for packet number: " + packetNum);
         ByteBuffer sendingPacket = ByteBuffer.allocate(1024);
         sendingPacket.putChar('B');
         sendingPacket.putInt(packetNum);

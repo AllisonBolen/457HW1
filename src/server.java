@@ -88,16 +88,16 @@ public class server {
                             int packetNum = buffer.getInt();
                             if (packetNum == minValGlobal) {     // is the packet we got what were looking for
                                 //  remove the data from the storage window, put the next packet in the storage window, send that next packet, wantedAcknowledged++;,  minValGlobal++;
-                                System.out.println("Got an acknowledgment for: " + packetNum);
+                                System.out.println("Got an in order acknowledgment for: " + packetNum);
                                 addAcknowledgement(packetNum); //
                                 ///minValGlobal++;
                                 checkWindow(myc, clientaddr);// removes the packet we got,
                             } else if (packetNum < minValGlobal || packetNum > (minValGlobal + 5)) {// the ack we got was a packet we already recived and isn not in the current window
                                 /// should do nothing
-                                System.out.println("Got WRONG acknowledgment in if 2");
+                                //System.out.println("Got WRONG acknowledgment in if 2");
                             } else if (packetNum < (minValGlobal + 5) && packetNum > minValGlobal) {// if its in the window but not what we are looking for
                                 addAcknowledgement(packetNum);
-                                System.out.println("Got WRONG acknowledgment in if 3");
+                                System.out.println("Got Out of Order acknowledgment for packet: " + packetNum);
                             }
                         }
 
@@ -116,13 +116,13 @@ public class server {
                                 try {
                                     fisGlobal = new FileInputStream(myFileGlobal);
                                 } catch (Exception e) {
-                                    System.out.println("Exception: " + e);
+                                   // System.out.println("Exception: " + e);
                                 }
                                 ByteBuffer sendPacketNumber = ByteBuffer.allocate(1028);
                                 packetAmountGlobal = fileSize(myFileGlobal.length());
                                 sendPacketNumber.putInt(packetAmountGlobal);
                                 sendPacketNumber.flip();
-                                System.out.println("Packets needed to be sent: " + packetAmountGlobal);
+                                //System.out.println("Packets needed to be sent: " + packetAmountGlobal);
                                 myc.send(sendPacketNumber, clientaddr);
                             }
                             // file doesnt exist
@@ -138,7 +138,7 @@ public class server {
                         }
                         //Acknowledged, send first 5.
                         else if (index == 'A') {
-                            System.out.println("Acknowledged!!!!!!!!");
+                            System.out.println("Acknowedged the initial File Name packet.");
                             if (packetAmountGlobal > 0) {
                                 startSlidingWindow(myc, clientaddr);
                             }
@@ -171,7 +171,7 @@ public class server {
     // calculate the total ammount of packets that needs to be sent
     public static int fileSize(long fileSize) {
         if (myFileGlobal.exists() && !myFileGlobal.isDirectory()) {
-            System.out.println("Size of file: " + fileSize);
+            //System.out.println("Size of file: " + fileSize);
             double count = fileSize / 1024.0;
             int ceiledValue = (int) Math.ceil(count);
             return ceiledValue;
@@ -290,11 +290,11 @@ public class server {
         }
         //this will send a packet if it is the last packet
         else {
-            System.out.println("in this send packet method");
+           // System.out.println("in this send packet method");
             try {
                 ByteBuffer buf = ByteBuffer.allocate(1028);
                 buf.putInt(packetNumGlobal);
-                System.out.println("myFileGlobal.length()" + myFileGlobal.length() + "startByteGlobal " + startByteGlobal);
+               // System.out.println("myFileGlobal.length()" + myFileGlobal.length() + "startByteGlobal " + startByteGlobal);
                 byteValues[4] = new byte[(int) myFileGlobal.length() - startByteGlobal];//1024
                 fisGlobal.read(byteValues[4], 0, (int) myFileGlobal.length() - startByteGlobal);
                 //System.out.println("solved");
@@ -316,19 +316,19 @@ public class server {
     // shift the array down and send then check next spot
     public static void checkWindow(DatagramChannel myC, SocketAddress cAddr) {
         //If it doesnt contain wat we are looking for return.
-        System.out.println("CHECK WINDIW IS CALLED!! and min val is: " + minValGlobal);
+        //System.out.println("CHECK WINDIW IS CALLED!! and min val is: " + minValGlobal);
         if (!acknowledgedPackets.contains(minValGlobal)) {
             return;
         }
         //if the packet now is ALREADY ack.
-        System.out.println(minValGlobal);
+       // System.out.println(minValGlobal);
         if (acknowledgedPackets.contains(minValGlobal) && packetNumGlobal <= packetAmountGlobal) { // is the min value already ackd ie in list
             byteValues[0] = null;// if so set teh lowest window bytes to null
             for (int i = 0; i < 4; i++) { // this will shift our values, sets the current value to the next value
                 byteValues[i] = byteValues[i + 1];
             }
             for (int i = 0; i < 5; i++) {
-                System.out.println("Element: " + i + " contains: " + byteValues[i]);
+          //      System.out.println("Element: " + i + " contains: " + byteValues[i]);
             }
             byteValues[4] = null;//clears the last array spot
             sendPacket(myC, cAddr);
