@@ -1,5 +1,7 @@
 //package proj1;
-// Loss is covered at 20%
+// Loss is covered at 20% on server
+//loss and dups at 20% on server
+// dups at 20% on server
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -82,7 +84,7 @@ public class server {
                         //flip the buffer to restrict the buffer to the content
                         buffer.flip();
                         // the bytes of the message
-                        System.out.println("buffer position: " + buffer.position()+ "buffer length: " + buffer.limit());
+                        //.out.println("buffer position: " + buffer.position()+ "buffer length: " + buffer.limit());
                         char index = buffer.getChar();
                         //ack for packet num on clients end
                         if (index == 'B') {
