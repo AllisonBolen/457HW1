@@ -1,8 +1,8 @@
 //package proj1;
 
 // 20% duplication passes
-// loss on client side passes at 20%
-// reorder on client side kind of works yeah?
+// loss on clientUDPFinal side passes at 20%
+// reorder on clientUDPFinal side kind of works yeah?
 
 import java.io.Console;
 import java.io.FileOutputStream;
@@ -19,8 +19,8 @@ import java.util.Scanner;
 // ArrayList.add(int index, E elemen)
 
 // It can currently read up to 5 packets.
-public class client {
-    // we need to store the data how an array of byte arrays of the packets we get on server side
+public class clientUDPFinal {
+    // we need to store the data how an array of byte arrays of the packets we get on serverUDPFinal side
     //
     public static byte[][] byteValues = new byte[5][];
     public static int[] numTracker = {0, 1, 2, 3, 4};
@@ -32,7 +32,7 @@ public class client {
         try {
             //create a scanner for user input
             Scanner scan = new Scanner(System.in);
-            //get the server address
+            //get the serverUDPFinal address
             Selector s = Selector.open();
             String addr = ipAddress(scan);
             //String addr = "127.0.0.1";
@@ -51,7 +51,7 @@ public class client {
             String m = getFileName(cons);
             int wantedPacket = 0;
             int packetNumberTotal = 0;
-            //set the socket address to the server
+            //set the socket address to the serverUDPFinal
             InetSocketAddress serverAddr = new InetSocketAddress(addr, port);
             //This is the while for Sending the File name w/ timeout resend
             while (true) {
@@ -72,8 +72,8 @@ public class client {
                     buff.put(fileByte);
                     buff.flip();
                     sc.send(buff, serverAddr);
-                } else { //else we got a reponse from the server.
-                    System.out.println("Got info from the server");
+                } else { //else we got a reponse from the serverUDPFinal.
+                    System.out.println("Got info from the serverUDPFinal");
 
                     Iterator i = s.selectedKeys().iterator();
                     while (i.hasNext()) {
@@ -84,7 +84,7 @@ public class client {
                         i.remove();
                     }
                     //System.out.println("After interator");
-                    //The packetnumber the server sends back.
+                    //The packetnumber the serverUDPFinal sends back.
                     ByteBuffer getA = ByteBuffer.allocate(1028);
                     sc.receive(getA);
                     getA.flip();
@@ -103,10 +103,10 @@ public class client {
                     }
                 }
             }
-            //This is for sending the acknowledgment that client received the packet number w/ resend
+            //This is for sending the acknowledgment that clientUDPFinal received the packet number w/ resend
             while (true) {
                 ByteBuffer ackBuffer = ByteBuffer.allocate(1028);
-                //Need to implement for server: if server gets A again, resend all data.
+                //Need to implement for serverUDPFinal: if serverUDPFinal gets A again, resend all data.
                 ackBuffer.putChar('A');
                 ackBuffer.putInt(-10);
                 ackBuffer.flip();
@@ -115,7 +115,7 @@ public class client {
                 if (n == 0) {
                     // didnt get any packets
                     System.out.println("Got a timeout");
-                } else { //else we got data from server.
+                } else { //else we got data from serverUDPFinal.
                     break;
                 }
             }
@@ -129,10 +129,10 @@ public class client {
                 ByteBuffer receivedPackets = ByteBuffer.allocate(1028);
                 sc.receive(receivedPackets);
                 receivedPackets.flip();
-                //the packet number fo rhte packet jsut recived form teh server
+                //the packet number fo rhte packet jsut recived form teh serverUDPFinal
                 int packetNum = receivedPackets.getInt();
                 //System.out.println("The packet number of this packet is: " + packetNum);
-                // first if for case 1: the packet we got from teh server is teh packet we want form teh server ie: hte lowest in our window
+                // first if for case 1: the packet we got from teh serverUDPFinal is teh packet we want form teh serverUDPFinal ie: hte lowest in our window
                 if (packetNum == wantedPacket) {
                     byte[] data = new byte[receivedPackets.remaining()];
                     receivedPackets.get(data);
@@ -147,11 +147,11 @@ public class client {
                 } else if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) { // packet duplicates
                     // if the packet is not in the window we are looking for
                     //System.out.println("Got duplicate");
-                    // send the packet to the server that we got this already if its less than the wanted or more then the window +5
+                    // send the packet to the serverUDPFinal that we got this already if its less than the wanted or more then the window +5
                     sendAcknowledgment(packetNum, sc, serverAddr);
                 } else if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
                     //if the packet is in our window but not what we need right now
-                    if(packetNum<wantedPacket){
+                    if (packetNum < wantedPacket) {
                         //System.out.println("got duplicate" + packetNum);
 
                     }
@@ -161,17 +161,17 @@ public class client {
                             byte[] data = new byte[receivedPackets.remaining()]; // write the data to teh proper location in the array
                             receivedPackets.get(data);
                             byteValues[loc] = data;
-                            sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server
+                            sendAcknowledgment(packetNum, sc, serverAddr); // send ack to serverUDPFinal
                         }
                     } else {
                         //System.out.println("got duplicate" + packetNum);
-                        sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server that we got a duplicate
+                        sendAcknowledgment(packetNum, sc, serverAddr); // send ack to serverUDPFinal that we got a duplicate
                     }
                 } else if (packetNum == packetNumberTotal) {
                     byte[] data = new byte[receivedPackets.remaining()]; // write the data to teh proper location in the array
                     receivedPackets.get(data);
                     fos.write(data);
-                    //send an ack to the server
+                    //send an ack to the serverUDPFinal
                     sendAcknowledgment(packetNum, sc, serverAddr);
                     sc.close();
                     System.exit(0);

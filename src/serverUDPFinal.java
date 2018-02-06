@@ -1,8 +1,8 @@
 //package proj1;
-// Loss is covered at 20% on server passes iffy
-// loss and dups at 20% on server passes
-// dups at 20% on server passes kind of 
-// reordering fail on server makes us have a loop
+// Loss is covered at 20% on serverUDPFinal passes iffy
+// loss and dups at 20% on serverUDPFinal passes
+// dups at 20% on serverUDPFinal passes kind of
+// reordering fail on serverUDPFinal makes us have a loop
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,7 +18,7 @@ import java.util.Iterator;
 import java.util.Scanner;
 
 //It can send an infinite amount of packets! and DNE
-public class server {
+public class serverUDPFinal {
 
     public static byte[][] byteValues = new byte[5][];
     //public static ArrayList<int> sentPackets = new ArrayList<int>();
@@ -41,13 +41,13 @@ public class server {
             int wantedAcknowledged = 0;
             // scanner for reading in data
             Scanner scan = new Scanner(System.in);
-            // port to use provided by server
-             // String addr = ipAddress(scan);
+            // port to use provided by serverUDPFinal
+            // String addr = ipAddress(scan);
 
-              int port = Integer.parseInt(getPort(scan));
-              validPort(port);
+            int port = Integer.parseInt(getPort(scan));
+            validPort(port);
 
-             //int port = 9999;
+            //int port = 9999;
             // opens a channnel to communicate through
             DatagramChannel c = DatagramChannel.open();
             // think of as a set of channels - along with an associated operation, int eh set for reading or writing? meant help check multiple channels at a time.
@@ -106,7 +106,7 @@ public class server {
                             }
                         }
 
-                        // F means we got filename, now we send to client packet Number.
+                        // F means we got filename, now we send to clientUDPFinal packet Number.
                         else if (index == 'F') {
                             byte[] msgBuffer = new byte[buffer.remaining()];
                             // get the data from the buffer to the msgbuffer
@@ -121,7 +121,7 @@ public class server {
                                 try {
                                     fisGlobal = new FileInputStream(myFileGlobal);
                                 } catch (Exception e) {
-                                   // System.out.println("Exception: " + e);
+                                    // System.out.println("Exception: " + e);
                                 }
                                 ByteBuffer sendPacketNumber = ByteBuffer.allocate(1028);
                                 packetAmountGlobal = fileSize(myFileGlobal.length());
@@ -301,11 +301,11 @@ public class server {
         }
         //this will send a packet if it is the last packet
         else {
-           // System.out.println("in this send packet method");
+            // System.out.println("in this send packet method");
             try {
                 ByteBuffer buf = ByteBuffer.allocate(1028);
                 buf.putInt(packetNumGlobal);
-               // System.out.println("myFileGlobal.length()" + myFileGlobal.length() + "startByteGlobal " + startByteGlobal);
+                // System.out.println("myFileGlobal.length()" + myFileGlobal.length() + "startByteGlobal " + startByteGlobal);
                 byteValues[4] = new byte[(int) myFileGlobal.length() - startByteGlobal];//1024
                 fisGlobal.read(byteValues[4], 0, (int) myFileGlobal.length() - startByteGlobal);
                 //System.out.println("solved");
@@ -332,14 +332,14 @@ public class server {
             return;
         }
         //if the packet now is ALREADY ack.
-       // System.out.println(minValGlobal);
+        // System.out.println(minValGlobal);
         if (acknowledgedPackets.contains(minValGlobal) && packetNumGlobal <= packetAmountGlobal) { // is the min value already ackd ie in list
             byteValues[0] = null;// if so set teh lowest window bytes to null
             for (int i = 0; i < 4; i++) { // this will shift our values, sets the current value to the next value
                 byteValues[i] = byteValues[i + 1];
             }
             for (int i = 0; i < 5; i++) {
-          //      System.out.println("Element: " + i + " contains: " + byteValues[i]);
+                //      System.out.println("Element: " + i + " contains: " + byteValues[i]);
             }
             byteValues[4] = null;//clears the last array spot
             sendPacket(myC, cAddr);
