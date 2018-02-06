@@ -82,6 +82,7 @@ public class server {
                         //flip the buffer to restrict the buffer to the content
                         buffer.flip();
                         // the bytes of the message
+                        System.out.println("buffer position: " + buffer.position()+ "buffer length: " + buffer.limit());
                         char index = buffer.getChar();
                         //ack for packet num on clients end
                         if (index == 'B') {
@@ -138,10 +139,20 @@ public class server {
                         }
                         //Acknowledged, send first 5.
                         else if (index == 'A') {
-                            System.out.println("Acknowedged the initial File Name packet.");
-                            if (packetAmountGlobal > 0) {
-                                startSlidingWindow(myc, clientaddr);
+
+                            int again = buffer.getInt();
+                            if (!acknowledgedPackets.contains(-10)) {
+                                addAcknowledgement(again);
+                                System.out.println("Acknowedged the initial File Name packet.");
+                                if (packetAmountGlobal > 0) {
+                                    startSlidingWindow(myc, clientaddr);
+                                }
                             }
+
+//                            System.out.println("Acknowedged the initial File Name packet.");
+//                            if (packetAmountGlobal > 0) {
+//                                startSlidingWindow(myc, clientaddr);
+//                            }
                         }
                         buffer.rewind();
                         i.remove();
