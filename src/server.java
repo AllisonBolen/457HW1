@@ -38,7 +38,7 @@ public class server {
             // scanner for reading in data
             Scanner scan = new Scanner(System.in);
             // port to use provided by server
-              String addr = ipAddress(scan);
+             // String addr = ipAddress(scan);
 
               int port = Integer.parseInt(getPort(scan));
               validPort(port);
@@ -53,7 +53,7 @@ public class server {
             // ??????
             c.register(s, SelectionKey.OP_READ);
             // lsiten on a port
-            c.bind(new InetSocketAddress(addr, port));
+            c.bind(new InetSocketAddress(port));
             // get the info as long as there is a thing open to read from
             while (true) {
                 //check if there is data to read
