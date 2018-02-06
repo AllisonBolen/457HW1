@@ -1,5 +1,9 @@
 //package proj1;
 
+// 20% duplication passes
+// loss on client side passes
+// reorder on client side kind of works
+
 import java.io.Console;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -69,7 +73,7 @@ public class client {
                     buff.flip();
                     sc.send(buff, serverAddr);
                 } else { //else we got a reponse from the server.
-                    System.out.println("Got something from the server");
+                    System.out.println("Got info from the server");
 
                     Iterator i = s.selectedKeys().iterator();
                     while (i.hasNext()) {
@@ -142,13 +146,13 @@ public class client {
                     wantedPacket = checkWindow(wantedPacket, fos);
                 } else if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) { // packet duplicates
                     // if the packet is not in the window we are looking for
-                    System.out.println("Got duplicate");
+                    //System.out.println("Got duplicate");
                     // send the packet to the server that we got this already if its less than the wanted or more then the window +5
                     sendAcknowledgment(packetNum, sc, serverAddr);
                 } else if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
                     //if the packet is in our window but not what we need right now
                     if(packetNum<wantedPacket){
-                        System.out.println("got duplicate" + packetNum);
+                        //System.out.println("got duplicate" + packetNum);
 
                     }
                     int loc = indexSpot(packetNum);
@@ -160,7 +164,7 @@ public class client {
                             sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server
                         }
                     } else {
-                        System.out.println("got duplicate" + packetNum);
+                        //System.out.println("got duplicate" + packetNum);
                         sendAcknowledgment(packetNum, sc, serverAddr); // send ack to server that we got a duplicate
                     }
                 } else if (packetNum == packetNumberTotal) {
@@ -264,10 +268,12 @@ public class client {
     }
 
     public static void validPort(int port) {
-        if (port < 1 || port > 65535) {
-            System.out.println("'" + port + "' is an invalid port address.");
-            System.exit(0);
+        if (port > 1 && port < 65535) {
+            return;
         }
+        System.out.println("'" + port + "' is an invalid port address.");
+        System.exit(0);
     }
+
 }
 
