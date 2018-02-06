@@ -98,7 +98,6 @@ public class client {
                 ByteBuffer ackBuffer = ByteBuffer.allocate(1028);
                 //Need to implement for server: if server gets A again, resend all data.
                 ackBuffer.putChar('A');
-                ackBuffer.putInt(-10);
                 ackBuffer.flip();
                 sc.send(ackBuffer, serverAddr);
                 int n = s.select(5000);
