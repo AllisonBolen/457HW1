@@ -1,7 +1,9 @@
 //package proj1;
-// Loss is covered at 20% on server
-//loss and dups at 20% on server
-// dups at 20% on server
+// Loss is covered at 20% on server passes
+// loss and dups at 20% on server passes
+// dups at 20% on server passes
+// reordering fail on server
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -91,7 +93,7 @@ public class server {
                             int packetNum = buffer.getInt();
                             if (packetNum == minValGlobal) {     // is the packet we got what were looking for
                                 //  remove the data from the storage window, put the next packet in the storage window, send that next packet, wantedAcknowledged++;,  minValGlobal++;
-                                System.out.println("Got an in order acknowledgment for: " + packetNum);
+                                System.out.println("Got acknowledgment for packet: " + packetNum);
                                 addAcknowledgement(packetNum); //
                                 ///minValGlobal++;
                                 checkWindow(myc, clientaddr);// removes the packet we got,
@@ -100,7 +102,7 @@ public class server {
                                 //System.out.println("Got WRONG acknowledgment in if 2");
                             } else if (packetNum < (minValGlobal + 5) && packetNum > minValGlobal) {// if its in the window but not what we are looking for
                                 addAcknowledgement(packetNum);
-                                System.out.println("Got Out of Order acknowledgment for packet: " + packetNum);
+                                System.out.println("Got acknowledgment for packet: " + packetNum);
                             }
                         }
 
@@ -150,11 +152,6 @@ public class server {
                                     startSlidingWindow(myc, clientaddr);
                                 }
                             }
-
-//                            System.out.println("Acknowedged the initial File Name packet.");
-//                            if (packetAmountGlobal > 0) {
-//                                startSlidingWindow(myc, clientaddr);
-//                            }
                         }
                         buffer.rewind();
                         i.remove();
@@ -385,10 +382,11 @@ public class server {
     }
 
     public static void validPort(int port) {
-        if (port < 1 || port > 65535) {
-            System.out.println("'" + port + "' is an invalid port address.");
-            System.exit(0);
+        if (port > 1 && port < 65535) {
+            return;
         }
+        System.out.println("'" + port + "' is an invalid port address.");
+        System.exit(0);
     }
 
     public static String ipAddress(Scanner scan) {
