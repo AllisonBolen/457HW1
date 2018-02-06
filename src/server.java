@@ -156,6 +156,7 @@ public class server {
                         }
                         buffer.rewind();
                         i.remove();
+                        acknowledgedPackets.clear();
                     }
                 }
             }
