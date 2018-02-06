@@ -1,5 +1,5 @@
 //package proj1;
-
+// Loss is covered at 20%
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
