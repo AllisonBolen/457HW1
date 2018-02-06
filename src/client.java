@@ -142,6 +142,7 @@ public class client {
                     wantedPacket = checkWindow(wantedPacket, fos);
                 } else if (packetNum < wantedPacket || packetNum > (wantedPacket + 5)) { // packet duplicates
                     // if the packet is not in the window we are looking for
+                    System.out.println("Got duplicate");
                     // send the packet to the server that we got this already if its less than the wanted or more then the window +5
                     sendAcknowledgment(packetNum, sc, serverAddr);
                 } else if (packetNum > wantedPacket && packetNum < (wantedPacket + 5)) {
